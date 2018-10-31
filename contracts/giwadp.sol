@@ -3,15 +3,14 @@ pragma solidity 0.4.25;
 import "./safemath.sol";
 
 /**
-* @notice ERC-20 Token for Green Investments that automatically share dividends among token holders
+@notice ERC-20 Token for Green Investments without automatic dividend Payment
  */
-contract GreenInvestments {
+contract Giwadp {
     using SafeMath for uint256;
     
     struct Investor {
         address account;
         uint256 dividendQuota;
-        uint256 balance;
     }
     
     // Public variables of the token
@@ -22,12 +21,12 @@ contract GreenInvestments {
     uint64 public totalSupply;
 
     constructor() public payable {        
-        Investor memory investor = Investor(msg.sender, 2500, 0);
+        Investor memory investor = Investor(msg.sender, 1 finney);
         investors[msg.sender] = investor;
         investorsAccounts.push(msg.sender);
-        name = "Green Investments Dividend Quota Token";
-        symbol = "GIDQT";
-        totalSupply = 2500;
+        name = "Green Investments Quota Token - 2026";
+        symbol = "GIQT2026";
+        totalSupply = 1 finney;
     }
     
     // This generates a public event on the blockchain that will notify clients
@@ -41,7 +40,7 @@ contract GreenInvestments {
     mapping (address => mapping (address => uint256)) private _allowed;
     
     modifier dividentQuotaLimit (uint256 value) {
-        require(value < 2500, "Invalid value");
+        require(value < 1 finney, "Invalid value");
         _;
     }
 
@@ -53,7 +52,7 @@ contract GreenInvestments {
         require(investorRequester.dividendQuota>=_dividendQuota, "The Investor requester must have dividendQuota balance in order to sell her dividendQuota");
         investorRequester.dividendQuota = investorRequester.dividendQuota.sub(_dividendQuota);
         
-        Investor memory investor = Investor(_investorAccount, _dividendQuota, 0);
+        Investor memory investor = Investor(_investorAccount, _dividendQuota);
         investors[_investorAccount] = investor;
 
         investorsAccounts.push(investor.account);
@@ -64,14 +63,14 @@ contract GreenInvestments {
         return investorsAccounts.length;
     }
 
-    function getSingleInvestor(address _investorID) public view returns (address investorAccount, uint256 dividendQuota, uint256 balance) {
-        require(_investorID != address(0), "Investor's ID must be a valid Ethereum Address");
+    function getSingleInvestor(address _investorID) public view returns (address investorAccount, uint256 dividendQuota) {
+        require(_investorID != address(0), "Investor ID must be valid Ethereum Address");
         Investor memory investor = investors[_investorID];
         investorAccount = investor.account;
         dividendQuota = investor.dividendQuota;
-        balance = investor.balance;
         return;
     }
+
 
     /**
     * @dev Get Investor's details based on his ID within the contract
@@ -80,33 +79,15 @@ contract GreenInvestments {
     * @return dividendQuota investor's divident quota
     * @return balance investor's balance
     */
-    function getSingleInvestorByID(uint _investorID) public view returns (address investorAccount, uint256 dividendQuota, uint256 balance) {
+    function getSingleInvestorByID(uint _investorID) public view returns (address investorAccount, uint256 dividendQuota) {
         require(_investorID >= 0, "Investor ID must be greater than zero");
         //require(devID <= numInvestors, "Dev ID must be valid. It is greather than total Investors available");
         address investorAddress = investorsAccounts[_investorID];
-        (investorAccount, dividendQuota, balance) = getSingleInvestor(investorAddress);
+        (investorAccount, dividendQuota) = getSingleInvestor(investorAddress);
         return;
     }
 
-    function withdraw() public {
-        Investor storage investor = investors[msg.sender];
-        require (investor.dividendQuota > 0, "You are not a Investor");
-        investor.account.transfer(investor.balance);
-        investor.balance = 0;
-    }
-    
-    function paydividendQuota() public payable returns (bool success) {
-        for (uint i = 0; i < investorsAccounts.length; i++) {
-            Investor memory investor = investors[investorsAccounts[i]];
-            if (investor.dividendQuota > 0) {
-                uint valueToSendToDev = (msg.value.mul(investor.dividendQuota)).div(1 finney);
-                investor.balance = investor.balance.add(valueToSendToDev);
-            }            
-        }
-        success = true;
-        return;
-    }   
-    
+     
     /**
     * @dev Gets the balance of the specified address.
     * @param owner The address to query the balance of.
@@ -134,7 +115,7 @@ contract GreenInvestments {
 
         Investor storage investorReciever = investors[to];
         if (investorReciever.account == address(0)) {
-            Investor memory dev = Investor(to, 0, 0);
+            Investor memory dev = Investor(to, 0);
             investors[to] = dev;
             investorsAccounts.push(to);
         }
